@@ -42,8 +42,8 @@
       </div>
 
       <div class="sidebar-panel">
-        <div class="sidebar-label">검색 기준</div>
-        <div class="sidebar-value">업체명 / 프로젝트명 / PJ No</div>
+        <div class="sidebar-label">권한 모드</div>
+        <div class="sidebar-value" id="authStatusText">조회 전용</div>
       </div>
     </aside>
 
@@ -69,10 +69,38 @@
               placeholder="업체명, 프로젝트명, PJ No 검색"
             />
           </label>
+
+          <div class="auth-box">
+            <div class="auth-top">
+              <span class="auth-label">편집 권한</span>
+              <button id="loginToggleBtn" class="mini-btn" type="button">로그인</button>
+            </div>
+
+            <div id="loginPanel" class="login-panel hidden">
+              <input id="adminIdInput" type="text" placeholder="아이디" />
+              <input id="adminPwInput" type="password" placeholder="비밀번호" />
+              <button id="loginBtn" class="primary-btn" type="button">관리자 로그인</button>
+            </div>
+
+            <div id="adminPanel" class="admin-panel hidden">
+              <span class="admin-badge">관리자 모드</span>
+              <button id="logoutBtn" class="mini-btn danger" type="button">로그아웃</button>
+            </div>
+          </div>
         </div>
       </header>
 
       <main id="viewRoot" class="content"></main>
+    </div>
+  </div>
+
+  <div id="modalBackdrop" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="modalTitle">데이터 편집</h3>
+        <button id="modalCloseBtn" class="icon-btn" type="button">✕</button>
+      </div>
+      <div id="modalBody" class="modal-body"></div>
     </div>
   </div>
 
