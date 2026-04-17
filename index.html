@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CONCOST | 수주 · 매출 · 입금 관리</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">CC</div>
+        <div class="brand-copy">
+          <h1>CONCOST</h1>
+          <p>Project Business Dashboard</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-btn active" data-view="dashboard">
+          <span class="nav-dot"></span>
+          <span>대시보드</span>
+        </button>
+        <button class="nav-btn" data-view="orders">
+          <span class="nav-dot"></span>
+          <span>수주 관리</span>
+        </button>
+        <button class="nav-btn" data-view="sales">
+          <span class="nav-dot"></span>
+          <span>매출 관리</span>
+        </button>
+        <button class="nav-btn" data-view="payments">
+          <span class="nav-dot"></span>
+          <span>입금 관리</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-panel">
+        <div class="sidebar-label">운영 기준</div>
+        <div class="sidebar-value">GitHub Pages 정적 배포</div>
+      </div>
+
+      <div class="sidebar-panel">
+        <div class="sidebar-label">검색 기준</div>
+        <div class="sidebar-value">업체명 / 프로젝트명 / PJ No</div>
+      </div>
+    </aside>
+
+    <div class="page">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="page-path">CONCOST / 프로젝트 관리</div>
+          <h2 id="pageTitle">대시보드</h2>
+          <p id="pageDesc">수주, 매출, 입금 데이터를 연도별로 빠르게 검토할 수 있습니다.</p>
+        </div>
+
+        <div class="topbar-right">
+          <label class="control">
+            <span>연도</span>
+            <select id="yearSelect"></select>
+          </label>
+
+          <label class="control control-search">
+            <span>통합 검색</span>
+            <input
+              id="searchInput"
+              type="text"
+              placeholder="업체명, 프로젝트명, PJ No 검색"
+            />
+          </label>
+        </div>
+      </header>
+
+      <main id="viewRoot" class="content"></main>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
