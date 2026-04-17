@@ -1,16 +1,9 @@
-const STORAGE_KEY = "CONCOST_SAMPLE_DATA_EDITABLE_V1";
-const AUTH_KEY = "CONCOST_ADMIN_AUTH_V1";
-
-const ADMIN_CREDENTIAL = {
-  id: "admin",
-  pw: "1234"
-};
+const STORAGE_KEY = "CONCOST_SAMPLE_DATA_EDITABLE_V2";
 
 const state = {
   view: "dashboard",
   year: null,
-  query: "",
-  isAdmin: false
+  query: ""
 };
 
 const viewMeta = {
@@ -39,15 +32,11 @@ const searchInput = document.getElementById("searchInput");
 const viewRoot = document.getElementById("viewRoot");
 const pageTitle = document.getElementById("pageTitle");
 const pageDesc = document.getElementById("pageDesc");
-const authStatusText = document.getElementById("authStatusText");
 
-const loginToggleBtn = document.getElementById("loginToggleBtn");
-const loginPanel = document.getElementById("loginPanel");
-const adminPanel = document.getElementById("adminPanel");
-const adminIdInput = document.getElementById("adminIdInput");
-const adminPwInput = document.getElementById("adminPwInput");
-const loginBtn = document.getElementById("loginBtn");
-const logoutBtn = document.getElementById("logoutBtn");
+const exportExcelBtn = document.getElementById("exportExcelBtn");
+const importExcelBtn = document.getElementById("importExcelBtn");
+const excelFileInput = document.getElementById("excelFileInput");
+const resetDataBtn = document.getElementById("resetDataBtn");
 
 const modalBackdrop = document.getElementById("modalBackdrop");
 const modalTitle = document.getElementById("modalTitle");
@@ -57,13 +46,11 @@ const modalCloseBtn = document.getElementById("modalCloseBtn");
 init();
 
 function init() {
-  state.isAdmin = localStorage.getItem(AUTH_KEY) === "Y";
   refreshYearOptions();
   bindNav();
-  bindAuth();
   bindFilters();
   bindModal();
-  updateAuthUI();
+  bindExcel();
   render();
 }
 
@@ -81,6 +68,13 @@ function loadDB() {
 
 function saveDB() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+}
+
+function resetDB() {
+  DB = JSON.parse(JSON.stringify(SAMPLE_DATA || {}));
+  saveDB();
+  refreshYearOptions();
+  render();
 }
 
 function refreshYearOptions() {
@@ -125,42 +119,11 @@ function bindFilters() {
     state.query = e.target.value.trim().toLowerCase();
     render();
   });
-}
 
-function bindAuth() {
-  loginToggleBtn.addEventListener("click", () => {
-    loginPanel.classList.toggle("hidden");
+  resetDataBtn.addEventListener("click", () => {
+    if (!confirm("현재 브라우저에 저장된 편집 데이터를 초기화하시겠습니까?")) return;
+    resetDB();
   });
-
-  loginBtn.addEventListener("click", () => {
-    const id = adminIdInput.value.trim();
-    const pw = adminPwInput.value.trim();
-
-    if (id === ADMIN_CREDENTIAL.id && pw === ADMIN_CREDENTIAL.pw) {
-      state.isAdmin = true;
-      localStorage.setItem(AUTH_KEY, "Y");
-      adminIdInput.value = "";
-      adminPwInput.value = "";
-      loginPanel.classList.add("hidden");
-      updateAuthUI();
-      render();
-      return;
-    }
-
-    alert("아이디 또는 비밀번호가 올바르지 않습니다.");
-  });
-
-  logoutBtn.addEventListener("click", () => {
-    state.isAdmin = false;
-    localStorage.removeItem(AUTH_KEY);
-    updateAuthUI();
-    render();
-  });
-}
-
-function updateAuthUI() {
-  authStatusText.textContent = state.isAdmin ? "관리자 편집 가능" : "조회 전용";
-  adminPanel.classList.toggle("hidden", !state.isAdmin);
 }
 
 function bindModal() {
@@ -168,6 +131,12 @@ function bindModal() {
   modalBackdrop.addEventListener("click", (e) => {
     if (e.target === modalBackdrop) closeModal();
   });
+}
+
+function bindExcel() {
+  exportExcelBtn.addEventListener("click", exportExcel);
+  importExcelBtn.addEventListener("click", () => excelFileInput.click());
+  excelFileInput.addEventListener("change", handleExcelImport);
 }
 
 function openModal(title, bodyHtml) {
@@ -217,7 +186,9 @@ function normalizeBucket(bucket) {
 }
 
 function safeNumber(value) {
-  const n = Number(value);
+  if (value === null || value === undefined || value === "") return 0;
+  const normalized = String(value).replace(/,/g, "").replace(/원/g, "").trim();
+  const n = Number(normalized);
   return Number.isFinite(n) ? n : 0;
 }
 
@@ -402,21 +373,21 @@ function renderDashboard(data) {
         <div class="card-head">
           <div>
             <h3 class="card-title">운영 포인트</h3>
-            <div class="card-desc">GitHub Pages 환경에 맞춘 조회+편집 구성</div>
+            <div class="card-desc">편집과 엑셀 작업이 바로 가능하도록 구성</div>
           </div>
         </div>
         <div class="info-list">
           <div class="info-item">
-            <strong>관리자 편집</strong>
-            <p>관리자 로그인 시 수주, 매출, 입금 상세 데이터를 직접 추가/수정/삭제할 수 있습니다.</p>
+            <strong>바로 편집</strong>
+            <p>수주, 매출, 입금 상세 데이터는 추가, 수정, 삭제가 즉시 가능합니다.</p>
           </div>
           <div class="info-item">
-            <strong>브라우저 저장</strong>
-            <p>데이터는 localStorage에 저장되므로 같은 브라우저에서는 유지됩니다.</p>
+            <strong>엑셀 내보내기</strong>
+            <p>현재 화면 기준으로 엑셀 파일을 내려받을 수 있습니다.</p>
           </div>
           <div class="info-item">
-            <strong>주의</strong>
-            <p>이 방식은 클라이언트 저장이라 다른 PC와 실시간 공유되지는 않습니다.</p>
+            <strong>엑셀 들여오기</strong>
+            <p>엑셀의 첫 번째 시트를 현재 탭의 상세 데이터로 반영합니다.</p>
           </div>
         </div>
       </article>
@@ -577,7 +548,9 @@ function renderOrders(data) {
             <h3 class="card-title">수주 프로젝트 상세</h3>
             <div class="card-desc">직접 편집 가능</div>
           </div>
-          ${state.isAdmin ? `<div class="tool-row"><button class="primary-btn" data-action="add-row" data-type="orders">수주 추가</button></div>` : ""}
+          <div class="tool-row">
+            <button class="primary-btn" data-action="add-row" data-type="orders">수주 추가</button>
+          </div>
         </div>
         ${renderOrdersDetailTable(rows)}
       </article>
@@ -634,7 +607,9 @@ function renderSales(data) {
             <h3 class="card-title">매출 프로젝트 상세</h3>
             <div class="card-desc">직접 편집 가능</div>
           </div>
-          ${state.isAdmin ? `<div class="tool-row"><button class="primary-btn" data-action="add-row" data-type="sales">매출 추가</button></div>` : ""}
+          <div class="tool-row">
+            <button class="primary-btn" data-action="add-row" data-type="sales">매출 추가</button>
+          </div>
         </div>
         ${renderSalesDetailTable(rows)}
       </article>
@@ -687,7 +662,9 @@ function renderPayments(data) {
             <h3 class="card-title">입금 프로젝트 상세</h3>
             <div class="card-desc">직접 편집 가능</div>
           </div>
-          ${state.isAdmin ? `<div class="tool-row"><button class="primary-btn" data-action="add-row" data-type="payments">입금 추가</button></div>` : ""}
+          <div class="tool-row">
+            <button class="primary-btn" data-action="add-row" data-type="payments">입금 추가</button>
+          </div>
         </div>
         ${renderPaymentsDetailTable(rows)}
       </article>
@@ -748,7 +725,7 @@ function renderOrdersDetailTable(rows) {
             <th class="t-right">외주</th>
             <th class="t-right">컨코스트</th>
             <th>비고</th>
-            ${state.isAdmin ? "<th>관리</th>" : ""}
+            <th>관리</th>
           </tr>
         </thead>
         <tbody>
@@ -764,11 +741,10 @@ function renderOrdersDetailTable(rows) {
               <td class="t-right">${formatMoney(row.outsourcing)}</td>
               <td class="t-right">${formatMoney(row.concost)}</td>
               <td class="muted">${escapeHtml(row.note || "-")}</td>
-              ${state.isAdmin ? `
-                <td>
-                  <button class="action-btn edit" data-action="edit-row" data-type="orders" data-index="${idx}">수정</button>
-                  <button class="action-btn delete" data-action="delete-row" data-type="orders" data-index="${idx}">삭제</button>
-                </td>` : ""}
+              <td>
+                <button class="action-btn edit" data-action="edit-row" data-type="orders" data-index="${idx}">수정</button>
+                <button class="action-btn delete" data-action="delete-row" data-type="orders" data-index="${idx}">삭제</button>
+              </td>
             </tr>
           `).join("")}
         </tbody>
@@ -826,7 +802,7 @@ function renderSalesDetailTable(rows) {
             <th class="t-right">매출합계</th>
             <th class="t-right">컨코스트</th>
             <th>비고</th>
-            ${state.isAdmin ? "<th>관리</th>" : ""}
+            <th>관리</th>
           </tr>
         </thead>
         <tbody>
@@ -845,11 +821,10 @@ function renderSalesDetailTable(rows) {
                 <td class="t-right">${formatMoney(total)}</td>
                 <td class="t-right">${formatMoney(concost)}</td>
                 <td class="muted">${escapeHtml(row.note || "-")}</td>
-                ${state.isAdmin ? `
-                  <td>
-                    <button class="action-btn edit" data-action="edit-row" data-type="sales" data-index="${idx}">수정</button>
-                    <button class="action-btn delete" data-action="delete-row" data-type="sales" data-index="${idx}">삭제</button>
-                  </td>` : ""}
+                <td>
+                  <button class="action-btn edit" data-action="edit-row" data-type="sales" data-index="${idx}">수정</button>
+                  <button class="action-btn delete" data-action="delete-row" data-type="sales" data-index="${idx}">삭제</button>
+                </td>
               </tr>
             `;
           }).join("")}
@@ -910,7 +885,7 @@ function renderPaymentsDetailTable(rows) {
             <th class="t-right">청구/예정 금액</th>
             <th class="t-right">기수령액</th>
             <th>비고</th>
-            ${state.isAdmin ? "<th>관리</th>" : ""}
+            <th>관리</th>
           </tr>
         </thead>
         <tbody>
@@ -931,11 +906,10 @@ function renderPaymentsDetailTable(rows) {
                 <td class="t-right">${formatMoney(claim)}</td>
                 <td class="t-right">${formatMoney(received)}</td>
                 <td class="muted">${escapeHtml(row.note || "-")}</td>
-                ${state.isAdmin ? `
-                  <td>
-                    <button class="action-btn edit" data-action="edit-row" data-type="payments" data-index="${idx}">수정</button>
-                    <button class="action-btn delete" data-action="delete-row" data-type="payments" data-index="${idx}">삭제</button>
-                  </td>` : ""}
+                <td>
+                  <button class="action-btn edit" data-action="edit-row" data-type="payments" data-index="${idx}">수정</button>
+                  <button class="action-btn delete" data-action="delete-row" data-type="payments" data-index="${idx}">삭제</button>
+                </td>
               </tr>
             `;
           }).join("")}
@@ -946,8 +920,6 @@ function renderPaymentsDetailTable(rows) {
 }
 
 function bindDynamicEvents() {
-  if (!state.isAdmin) return;
-
   document.querySelectorAll("[data-action='add-row']").forEach((btn) => {
     btn.addEventListener("click", () => openEditModal(btn.dataset.type));
   });
@@ -1189,10 +1161,160 @@ function rebuildMonthly(type, year) {
         received: sum(rows, "received"),
         billingExVat: sum(rows, "billingExVat"),
         billingIncVat: sum(rows, "billingIncVat"),
-        balanceAfterBilling: sum(rows.map((r) => safeNumber(r.total) - safeNumber(r.received)).map(v => ({v})), "v"),
+        balanceAfterBilling: rows.reduce((acc, r) => acc + (safeNumber(r.total) - safeNumber(r.received)), 0),
         outsourcing: sum(rows, "outsourcing"),
         expectedPaymentVat: sum(rows, "billingIncVat")
       };
     });
   }
+}
+
+function exportExcel() {
+  const wb = XLSX.utils.book_new();
+
+  if (state.view === "dashboard") {
+    const yearData = getYearData(state.year);
+
+    const dashboardSheet = XLSX.utils.json_to_sheet([
+      {
+        구분: "수주",
+        연도: state.year,
+        합계: orderMonthlySummary(yearData.orders.monthly).total,
+        컨코스트: orderMonthlySummary(yearData.orders.monthly).concost,
+        외주: orderMonthlySummary(yearData.orders.monthly).outsourcing
+      },
+      {
+        구분: "매출",
+        연도: state.year,
+        합계: salesMonthlySummary(yearData.sales.monthly).total,
+        컨코스트: salesMonthlySummary(yearData.sales.monthly).concost
+      },
+      {
+        구분: "입금",
+        연도: state.year,
+        청구예정합계: paymentMonthlySummary(yearData.payments.monthly).claim,
+        기수령합계: paymentMonthlySummary(yearData.payments.monthly).received
+      }
+    ]);
+    XLSX.utils.book_append_sheet(wb, dashboardSheet, "대시보드요약");
+
+    const ordersMonthly = XLSX.utils.json_to_sheet(yearData.orders.monthly);
+    const salesMonthly = XLSX.utils.json_to_sheet(yearData.sales.monthly);
+    const paymentsMonthly = XLSX.utils.json_to_sheet(yearData.payments.monthly);
+
+    XLSX.utils.book_append_sheet(wb, ordersMonthly, "수주월별");
+    XLSX.utils.book_append_sheet(wb, salesMonthly, "매출월별");
+    XLSX.utils.book_append_sheet(wb, paymentsMonthly, "입금월별");
+  } else {
+    const details = getYearData(state.year)[state.view].details.filter(matchesQuery);
+    const sheet = XLSX.utils.json_to_sheet(details);
+    XLSX.utils.book_append_sheet(wb, sheet, `${getTypeLabel(state.view)}상세`);
+  }
+
+  const fileName = `CONCOST_${viewMeta[state.view].title}_${state.year}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+}
+
+function handleExcelImport(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  if (state.view === "dashboard") {
+    alert("대시보드에서는 들여오기를 하지 않습니다. 수주/매출/입금 탭에서 진행해주세요.");
+    excelFileInput.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const data = e.target.result;
+    const wb = XLSX.read(data, { type: "binary" });
+    const firstSheetName = wb.SheetNames[0];
+    const sheet = wb.Sheets[firstSheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+    if (!rows.length) {
+      alert("엑셀에 데이터가 없습니다.");
+      excelFileInput.value = "";
+      return;
+    }
+
+    if (!confirm(`현재 ${getTypeLabel(state.view)} ${state.year}년 상세 데이터를 엑셀 데이터로 교체하시겠습니까?`)) {
+      excelFileInput.value = "";
+      return;
+    }
+
+    importRowsToCurrentView(rows);
+    excelFileInput.value = "";
+  };
+
+  reader.readAsBinaryString(file);
+}
+
+function importRowsToCurrentView(rows) {
+  if (!DB[state.view][state.year]) {
+    DB[state.view][state.year] = { monthly: [], details: [] };
+  }
+
+  if (state.view === "orders") {
+    DB.orders[state.year].details = rows.map((r) => ({
+      month: r.month || r.월 || "1월",
+      pjNo: r.pjNo || r["PJ No"] || r.PJNo || "",
+      orderDate: r.orderDate || r.수주일 || "",
+      company: r.company || r.업체명 || "",
+      project: r.project || r.프로젝트명 || "",
+      category: r.category || r.구분 || "",
+      orderAmount: safeNumber(r.orderAmount || r.수주액),
+      adjustment: safeNumber(r.adjustment || r.조정금액),
+      finalOrder: safeNumber(r.finalOrder || r.최종수주액),
+      outsourcing: safeNumber(r.outsourcing || r.외주),
+      concost: safeNumber(r.concost || r.컨코스트),
+      note: r.note || r.비고 || null
+    }));
+    rebuildMonthly("orders", state.year);
+  }
+
+  if (state.view === "sales") {
+    DB.sales[state.year].details = rows.map((r) => ({
+      month: r.month || r.월 || "1월",
+      pjNo: r.pjNo || r["PJ No"] || r.PJNo || "",
+      issueDate: r.issueDate || r.발행일 || "",
+      company: r.company || r.업체명 || "",
+      project: r.project || r.프로젝트명 || "",
+      total: safeNumber(r.total || r.매출합계),
+      concost: safeNumber(r.concost || r.컨코스트),
+      note: r.note || r.비고 || null
+    }));
+    rebuildMonthly("sales", state.year);
+  }
+
+  if (state.view === "payments") {
+    DB.payments[state.year].details = rows.map((r) => ({
+      month: r.month || r.월 || "1월",
+      no: r.no || r.No || r.NO || "",
+      company: r.company || r.업체명 || "",
+      project: r.project || r.프로젝트명 || "",
+      manager: r.manager || r.기성담당자 || "",
+      expectedPayment: r.expectedPayment || r.지급예상일 || "",
+      total: safeNumber(r.total || r["청구/예정 금액"] || r.청구예정금액),
+      received: safeNumber(r.received || r.기수령액),
+      billingExVat: safeNumber(r.billingExVat || r["청구금액(VAT제외)"]),
+      billingIncVat: safeNumber(r.billingIncVat || r["청구금액(VAT포함)"]),
+      outsourcing: safeNumber(r.outsourcing || r.외주),
+      issueDate: r.issueDate || r.발행일 || "",
+      note: r.note || r.비고 || null
+    }));
+    rebuildMonthly("payments", state.year);
+  }
+
+  saveDB();
+  refreshYearOptions();
+  render();
+}
+
+function getTypeLabel(type) {
+  if (type === "orders") return "수주";
+  if (type === "sales") return "매출";
+  if (type === "payments") return "입금";
+  return "데이터";
 }
