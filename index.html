@@ -42,8 +42,8 @@
       </div>
 
       <div class="sidebar-panel">
-        <div class="sidebar-label">권한 모드</div>
-        <div class="sidebar-value" id="authStatusText">조회 전용</div>
+        <div class="sidebar-label">편집 모드</div>
+        <div class="sidebar-value">항상 편집 가능</div>
       </div>
     </aside>
 
@@ -70,22 +70,14 @@
             />
           </label>
 
-          <div class="auth-box">
-            <div class="auth-top">
-              <span class="auth-label">편집 권한</span>
-              <button id="loginToggleBtn" class="mini-btn" type="button">로그인</button>
+          <div class="toolbar-box">
+            <div class="toolbar-label">데이터 작업</div>
+            <div class="tool-row">
+              <button id="exportExcelBtn" class="primary-btn" type="button">엑셀 내보내기</button>
+              <button id="importExcelBtn" class="outline-btn" type="button">엑셀 들여오기</button>
+              <button id="resetDataBtn" class="mini-btn danger" type="button">초기화</button>
             </div>
-
-            <div id="loginPanel" class="login-panel hidden">
-              <input id="adminIdInput" type="text" placeholder="아이디" />
-              <input id="adminPwInput" type="password" placeholder="비밀번호" />
-              <button id="loginBtn" class="primary-btn" type="button">관리자 로그인</button>
-            </div>
-
-            <div id="adminPanel" class="admin-panel hidden">
-              <span class="admin-badge">관리자 모드</span>
-              <button id="logoutBtn" class="mini-btn danger" type="button">로그아웃</button>
-            </div>
+            <input id="excelFileInput" type="file" accept=".xlsx,.xls" hidden />
           </div>
         </div>
       </header>
@@ -104,6 +96,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
